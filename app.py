@@ -4,18 +4,28 @@ from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
+# ==========================================
+# 1. CONFIGURACIÓN INICIAL Y CONEXIÓN A BD
+# ==========================================
 load_dotenv()
 
 app = Flask(__name__)
 
+# Conexión a Supabase usando variables de entorno
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
 supabase: Client = create_client(url, key)
 
+# ==========================================
+# 2. ENDPOINTS BÁSICOS
+# ==========================================
+
+# Ruta de prueba para verificar que la API está activa
 @app.route('/')
 def index():
     return jsonify({"mensaje": "API de Unidades Económicas funcionando"})
 
+# Catálogo general con límite de 1000 registros y limpieza de coordenadas
 @app.route('/api/unidades', methods=['GET'])
 def get_unidades():
     try:
@@ -23,6 +33,7 @@ def get_unidades():
         data = response.data
         for d in data:
             try:
+                # Estandarización de formato de coordenadas
                 if d.get('GPS (latitud,longitud)'):
                     raw_coords = d['GPS (latitud,longitud)'].split(',')
                     raw_lat = float(raw_coords[0])
@@ -39,6 +50,7 @@ def get_unidades():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# Consulta de una unidad específica por su ID
 @app.route('/api/unidades/<int:id_unidad>', methods=['GET'])
 def get_unidad_por_id(id_unidad):
     try:
@@ -49,22 +61,18 @@ def get_unidad_por_id(id_unidad):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+# ==========================================
+# 3. ENDPOINTS DE BÚSQUEDA Y FILTRADO
+# ==========================================
+
+# Búsqueda por coincidencia de texto parcial en el nombre del establecimiento
 @app.route('/api/unidades/buscar', methods=['GET'])
 def buscar_por_nombre():
     nombre_buscado = request.args.get('nombre', '')
     response = supabase.table('INEGI').select("id, nom_estab, raz_social").ilike('nom_estab', f'%{nombre_buscado}%').limit(50).execute()
     return jsonify(response.data)
 
-@app.route('/api/estadisticas/total_por_estado', methods=['GET'])
-def total_por_estado():
-    response = supabase.table('INEGI').select("entidad").execute()
-    conteo = {}
-    for registro in response.data:
-        estado = registro['entidad']
-        conteo[estado] = conteo.get(estado, 0) + 1
-    resultado = [{"estado": k, "total": v} for k, v in conteo.items()]
-    return jsonify(resultado)
-
+# Filtro múltiple dinámico por Estado y/o Código de Actividad Económica
 @app.route('/api/unidades/filtro', methods=['GET'])
 def filtrar_unidades():
     estado = request.args.get('estado')
@@ -77,6 +85,22 @@ def filtrar_unidades():
     response = query.limit(100).execute()
     return jsonify(response.data)
 
+# ==========================================
+# 4. ENDPOINTS ANALÍTICOS Y ESTRUCTURADOS
+# ==========================================
+
+# Agrupación y conteo total de establecimientos por Estado (Para KPIs)
+@app.route('/api/estadisticas/total_por_estado', methods=['GET'])
+def total_por_estado():
+    response = supabase.table('INEGI').select("entidad").execute()
+    conteo = {}
+    for registro in response.data:
+        estado = registro['entidad']
+        conteo[estado] = conteo.get(estado, 0) + 1
+    resultado = [{"estado": k, "total": v} for k, v in conteo.items()]
+    return jsonify(resultado)
+
+# Generación de perfil detallado anidando la información en JSON complejo
 @app.route('/api/unidades/<int:id_unidad>/perfil_completo', methods=['GET'])
 def get_perfil_completo(id_unidad):
     response = supabase.table('INEGI').select("*").eq("id", id_unidad).execute()
@@ -106,6 +130,11 @@ def get_perfil_completo(id_unidad):
     }
     return jsonify(perfil)
 
+# ==========================================
+# 5. ENDPOINTS GEOESPACIALES
+# ==========================================
+
+# Función matemática auxiliar: Fórmula de Haversine para calcular distancias
 def calcular_distancia(lat1, lon1, lat2, lon2):
     R = 6371.0 
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
@@ -114,6 +143,7 @@ def calcular_distancia(lat1, lon1, lat2, lon2):
     a = math.sin(dphi / 2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2)**2
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
+# Búsqueda de unidades en un radio específico basado en latitud y longitud del usuario
 @app.route('/api/unidades/cercanas', methods=['GET'])
 def buscar_cercanas():
     try:
@@ -144,5 +174,8 @@ def buscar_cercanas():
             
     return jsonify(cercanos)
 
+# ==========================================
+# 6. EJECUCIÓN DE LA APLICACIÓN
+# ==========================================
 if __name__ == '__main__':
     app.run(debug=True)
