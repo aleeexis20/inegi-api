@@ -14,6 +14,7 @@ Este proyecto migra un conjunto de datos normalizado del INEGI hacia una arquite
 ### Paso 1: Migración a la Nube (Supabase)
 Se modeló físicamente la base de datos a partir de un Excel normalizado, creando tablas relacionales y cargando los datos correspondientes en PostgreSQL.
 
+
 ### Paso 2 y 3: Desarrollo y Despliegue de la API (PythonAnywhere)
 Se desarrolló una API en Flask con los siguientes endpoints públicos:
 * **Catálogo General:** `GET https://aleeexis.pythonanywhere.com/api/unidades`
@@ -31,6 +32,8 @@ Se conectó Power BI directamente a la API web extrayendo los JSON. El dashboard
 * Mapa interactivo validando calidad de datos geográficos.
 * Gráfico de barras y distribución por anillos.
 * Filtros interactivos por Municipio, Categoría y Búsqueda por Nombre.
+
+
 
 ### EJEMPLOS DE CONSULTA RAPIDA
 
