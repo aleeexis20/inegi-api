@@ -25,7 +25,12 @@ Se desarrolló una API en Flask con los siguientes endpoints públicos:
 * **Perfil Completo (Anidado):** `GET https://aleeexis.pythonanywhere.com/api/unidades/<id>/perfil_completo` 
 * **Búsqueda Geoespacial:** `GET https://aleeexis.pythonanywhere.com/api/unidades/cercanas?lat=<X>&lon=<Y>&radio=<Z>` 
 
-*Nota: El código fuente en este repositorio incluye documentación detallada por sección de acciones.*
+### Prueba Postman
+Mensaje:
+I can see your Get data request hits https://aleeexis.pythonanywhere.com/api/unidades and returns a JSON array of business/location records with fields like entidad, municipio, nom_estab, codigo_act, latitud_limpia, longitud_limpia, etc.
+
+200 OK
+Request successful. The server has responded as required.
 
 ### Paso 4: Visualización (Business Intelligence)
 Se conectó Power BI directamente a la API web extrayendo los JSON. El dashboard incluye:
